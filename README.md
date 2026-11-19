@@ -3,8 +3,8 @@
 BookNook is a responsive community library where readers can discover books, contribute titles, borrow available copies for seven days, and return them.
 
 **Live site:** Pending deployment. Add the public Vercel URL here after deployment.  
-**Client repository:** Add the public GitHub client repository URL here.  
-**Server repository:** Add the public GitHub server repository URL here.
+**Client repository:** https://github.com/husainahmadrayhan-blip/booknook-client  
+**Server repository:** https://github.com/husainahmadrayhan-blip/-booknook-server
 
 ## Features
 

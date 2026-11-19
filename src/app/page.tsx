@@ -1,0 +1,26 @@
+"use client";
+import { useEffect,useState } from "react";
+import Link from "next/link";
+import { ArrowRight,BookOpen,Search,Sparkles,Heart,Bookmark } from "lucide-react";
+import { Swiper,SwiperSlide } from "swiper/react";
+import { Autoplay,Pagination } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/pagination";
+import { SiteShell } from "@/components/site-shell";
+type Book={_id:string;title:string;author:string;category:string;image:string;description?:string};
+const slides=[
+ {eyebrow:"A WORLD OF STORIES",title:"Find your next favorite chapter.",copy:"A little place for big imaginations. Discover stories, share knowledge, and let every page take you somewhere new."},
+ {eyebrow:"READ. BORROW. REPEAT.",title:"Good books are meant to be shared.",copy:"Explore thoughtful reads across fiction, science, history and more — then borrow a book for your next quiet moment."},
+ {eyebrow:"MAKE TIME TO READ",title:"A quieter way to explore more.",copy:"Build your reading list, discover new arrivals and keep all your borrowed books in one simple place."}
+];
+export default function Home(){const [books,setBooks]=useState<Book[]>([]),[search,setSearch]=useState("");
+ useEffect(()=>{fetch((process.env.NEXT_PUBLIC_API_URL||"http://localhost:4000")+"/books?limit=6").then(r=>r.ok?r.json():[]).then(d=>setBooks(Array.isArray(d)?d.slice(0,6):[])).catch(()=>setBooks([]));},[]);
+ const visible=books.filter(b=>(b.title+" "+b.author+" "+b.category).toLowerCase().includes(search.toLowerCase()));
+ return <SiteShell><main>
+ <section className="hero"><div className="hero-text"><Swiper modules={[Autoplay,Pagination]} autoplay={{delay:5500,disableOnInteraction:false}} loop pagination={{clickable:true}} className="hero-swiper">{slides.map(s=><SwiperSlide key={s.eyebrow}><span className="eyebrow"><Sparkles size={14}/> {s.eyebrow}</span><h1>{s.title}</h1><p>{s.copy}</p><div className="hero-buttons"><Link href="/books" className="btn btn-dark">Browse books <ArrowRight size={17}/></Link><span className="hero-note"><span className="avatars">A B C</span> A little community of readers</span></div></SwiperSlide>)}</Swiper></div><div className="hero-art"><div className="sun-disc"/><div className="hero-book book-one"><div className="book-cover"><span>THE<br/>ART OF<br/>SLOW LIVING</span><i>✳</i></div></div><div className="hero-book book-two"><div className="book-cover"><span>WILD<br/>MINDS</span><i>✺</i></div></div><div className="hero-book book-three"><div className="book-cover"><span>THE<br/>GARDEN<br/>WITHIN</span><i>❋</i></div></div><div className="floating-note"><Bookmark size={16}/> Your next chapter</div><span className="art-spark">✳</span></div></section>
+ <section className="trust-strip"><div><strong>01</strong><span>Discover stories<br/>worth sharing</span></div><div><strong>02</strong><span>Borrow with<br/>a few clicks</span></div><div><strong>03</strong><span>Return and<br/>read something new</span></div><div className="trust-last"><span>Made for curious minds</span><Heart size={17}/></div></section>
+ <section className="section arrivals"><div className="section-heading"><div><span className="eyebrow">FRESH OFF THE SHELF</span><h2>New arrivals<span className="period">.</span></h2><p>A fresh stack of stories, just waiting to be opened.</p></div><Link href="/books" className="text-link">Explore all books <ArrowRight size={16}/></Link></div><div className="searchbar"><Search size={18}/><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Find a title, author or category..."/></div><div className="book-grid">{visible.map((b,i)=><article className="book-card" key={b._id}><Link href={"/books/"+b._id} className="cover-wrap"><img src={b.image} alt={b.title}/><span className="category">{b.category}</span><span className="cover-arrow"><ArrowRight size={17}/></span></Link><div className="book-info"><span className="book-index">0{i+1} / NEW ARRIVAL</span><h3>{b.title}</h3><p>by {b.author}</p><Link href={"/books/"+b._id} className="details-link">View details <ArrowRight size={15}/></Link></div></article>)}</div>{visible.length===0&&<p className="empty">The shelves are waiting for their first stories.</p>}<div className="center"><Link href="/books" className="btn btn-outline">See all books <ArrowRight size={16}/></Link></div></section>
+ <section className="borrow-band"><div className="borrow-illustration"><div className="circle-outline"/><BookOpen size={74} strokeWidth={1}/><span className="little-star">✳</span></div><div><span className="eyebrow">A SIMPLE LITTLE RITUAL</span><h2>Three steps.<br/>A whole new world.</h2><p>Finding your next read should feel easy. Pick a book, borrow it, and return when you’re ready for another adventure.</p><Link href="/books" className="btn btn-light">Browse the shelves <ArrowRight size={16}/></Link></div><div className="steps"><div><b>01</b><span>Find a book</span></div><div><b>02</b><span>Take it home</span></div><div><b>03</b><span>Pass the joy on</span></div></div></section>
+ <section className="quote-section"><span className="eyebrow">A NOTE FOR YOUR NEXT CHAPTER</span><blockquote>“A room without books is like a body without a soul.”</blockquote><span className="quote-by">— Marcus Tullius Cicero</span></section>
+ </main></SiteShell>;
+}

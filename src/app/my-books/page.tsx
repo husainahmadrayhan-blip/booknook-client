@@ -1,0 +1,23 @@
+"use client";
+import { useCallback,useEffect,useState } from "react";
+import Link from "next/link";
+import { toast } from "sonner";
+import { SiteShell } from "@/components/site-shell";
+import { PrivateGate } from "@/components/private-gate";
+import { useAuthSession } from "@/lib/use-auth-session";
+import { apiFetch } from "@/lib/api";
+type Book={_id:string;title:string;author:string;category:string;image:string;description:string;totalCopies:number;availableCopies:number;ownerEmail:string};
+export default function MyBooks(){
+ const {data:session}=useAuthSession();
+ const [books,setBooks]=useState<Book[]>([]),[loading,setLoading]=useState(true),[editing,setEditing]=useState<Book|null>(null),[deleting,setDeleting]=useState<Book|null>(null),[busy,setBusy]=useState(false);
+ const load=useCallback(async()=>{try{const all=await apiFetch("/books") as Book[];setBooks(all.filter(b=>b.ownerEmail?.toLowerCase()===session?.user.email?.toLowerCase()));}catch(e){toast.error(e instanceof Error?e.message:"Could not load your books.");}finally{setLoading(false);}},[session?.user.email]);
+ useEffect(()=>{if(session){const task=window.setTimeout(()=>{void load();},0);return()=>window.clearTimeout(task);}},[session,load]);
+ async function save(e:React.FormEvent){e.preventDefault();if(!editing)return;setBusy(true);try{const updated=await apiFetch("/books/"+editing._id,{method:"PATCH",body:JSON.stringify(editing)});setBooks(v=>v.map(b=>b._id===editing._id?updated:b));setEditing(null);toast.success("Book details updated.");}catch(e){toast.error(e instanceof Error?e.message:"Update failed.");}finally{setBusy(false);}}
+ async function remove(){if(!deleting)return;setBusy(true);try{await apiFetch("/books/"+deleting._id,{method:"DELETE"});setBooks(v=>v.filter(b=>b._id!==deleting._id));setDeleting(null);toast.success("Book removed from the library.");}catch(e){toast.error(e instanceof Error?e.message:"Delete failed.");}finally{setBusy(false);}}
+ return <SiteShell><PrivateGate><main className="section"><span className="eyebrow">YOUR CONTRIBUTION</span><h2>My books<span className="period">.</span></h2><p>Manage the books you have added to the community shelf.</p>
+ {loading?<div className="loading-state"><span className="spinner"/>Loading your books…</div>:books.length?<div className="manage-grid">{books.map(b=><article className="manage-card" key={b._id}><img src={b.image} alt={b.title}/><div><span className="category-inline">{b.category}</span><h3>{b.title}</h3><p>by {b.author}</p><small>{b.availableCopies} of {b.totalCopies} copies available</small><div className="manage-actions"><button className="btn btn-outline" onClick={()=>setEditing({...b})}>Edit</button><button className="btn btn-danger" onClick={()=>setDeleting(b)}>Delete</button></div></div></article>)}</div>:<div className="empty-panel"><h3>Your shelf is waiting.</h3><p>You have not added any books yet.</p><Link className="btn btn-dark" href="/add-book">Add your first book</Link></div>}
+ </main>
+ {editing&&<div className="modal-backdrop"><form className="modal-card form-stack" onSubmit={save}><button type="button" className="modal-close" onClick={()=>setEditing(null)}>×</button><h3>Edit book details</h3><label>Title<input required value={editing.title} onChange={e=>setEditing({...editing,title:e.target.value})}/></label><label>Author<input required value={editing.author} onChange={e=>setEditing({...editing,author:e.target.value})}/></label><label>Category<select value={editing.category} onChange={e=>setEditing({...editing,category:e.target.value})}>{["Fiction","Science","History","Kids","Others"].map(v=><option key={v}>{v}</option>)}</select></label><label>Image URL<input required value={editing.image} onChange={e=>setEditing({...editing,image:e.target.value})}/></label><label>Total copies<input type="number" min="0" required value={editing.totalCopies} onChange={e=>setEditing({...editing,totalCopies:Number(e.target.value)})}/></label><label>Description<textarea rows={4} required value={editing.description} onChange={e=>setEditing({...editing,description:e.target.value})}/></label><button className="btn btn-dark" disabled={busy}>{busy?"Saving…":"Save changes"}</button></form></div>}
+ {deleting&&<div className="modal-backdrop"><div className="modal-card"><h3>Remove this book?</h3><p>“{deleting.title}” will be removed from the library. Books with active borrows cannot be deleted.</p><div className="manage-actions"><button className="btn btn-outline" onClick={()=>setDeleting(null)}>Keep book</button><button className="btn btn-danger" disabled={busy} onClick={remove}>{busy?"Removing…":"Delete book"}</button></div></div></div>}
+ </PrivateGate></SiteShell>;
+}
